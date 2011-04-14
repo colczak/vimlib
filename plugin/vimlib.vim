@@ -18,9 +18,11 @@ function! vimlib#gitDir()
     let prevdir = curdir
     let curdir = getcwd()
   endwhile
- 
-"  cd origcurdir
-  echo gitdir
+  if curdir == '/'
+    let curdir = origcurdir
+    exe 'cd ' curdir
+  end
+  "echo 'CURDIR='.curdir
 endfunction
 
 function! vimlib#projectFuzzyFind()
@@ -32,3 +34,21 @@ function! vimlib#projectFuzzyFind()
   " call fuf#givendir#launch('', 0, '>', split(&runtimepath, ','))
   "  :FufFileWithCurrentBufferDir 
 endfunction
+
+function! vimlib#search(query)
+  call vimlib#gitDir()
+  let curdir = getcwd()
+
+  let grep_cmd = "cd ".curdir."; search \"".a:query."\""
+  let vim_func = "VimlibSearchResults"
+
+  echo grep_cmd
+  call AsyncCommand(grep_cmd, vim_func)
+endfunction
+
+function! VimlibSearchResults(temp_file_name)
+  let &errorformat = &grepformat
+  call OnCompleteLoadErrorFile(a:temp_file_name)
+endfunction
+
+command! -nargs=1 VimlibSearch call vimlib#search(<q-args>)
